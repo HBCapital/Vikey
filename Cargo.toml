@@ -2,8 +2,8 @@
 members = [
     "crates/vikey-core",
     "crates/vikey-nom",
+    "crates/vikey-vietnamese",
     # TODO: Add these when implemented
-    # "crates/vikey-vietnamese",
     # "crates/vikey-platform",
     # "crates/vikey-config",
 ]
