@@ -8,6 +8,13 @@ publish = false
 name = "basic_usage"
 path = "basic_usage.rs"
 
+[[example]]
+name = "demo_ui"
+path = "demo_ui.rs"
+
 [dependencies]
 vikey-core = { path = "../crates/vikey-core" }
 vikey-vietnamese = { path = "../crates/vikey-vietnamese" }
+ratatui = "0.26"
+crossterm = "0.27"
+anyhow = "1.0"
