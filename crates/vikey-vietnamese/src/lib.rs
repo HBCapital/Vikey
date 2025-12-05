@@ -4,8 +4,10 @@ pub mod types;
 pub mod lookup;
 pub mod plugin;
 pub mod methods;
+pub mod syllable;
 
 // Re-exports
 pub use plugin::VietnamesePlugin;
 pub use lookup::VietnameseLookup;
 pub use types::{ToneType, MarkType, WordForm, TransformEffect, Transformation};
+pub use syllable::{Syllable, Tone, Modification};
