@@ -1,5 +1,5 @@
 # Rust
-/target/
+target/
 **/*.rs.bk
 *.pdb
 Cargo.lock
@@ -10,25 +10,16 @@ Cargo.lock
 *.swp
 *.swo
 *~
+
+# OS
 .DS_Store
+Thumbs.db
 
-# Build artifacts
-*.exe
-*.dll
-*.so
-*.dylib
+# Reference projects (too large, clone separately)
+references/unikey/
+references/openkey/
+references/fcitx5-unikey/
+references/ibus-bamboo/
 
-# Testing
-*.profraw
-*.profdata
-
-# Documentation
-/target/doc/
-
-# Backup files
-*.bak
-*.tmp
-
-# References - External projects for reference only
-# Keep only README.md and .gitignore in references/
-# references/*
+# Keep only the README
+!references/README.md
