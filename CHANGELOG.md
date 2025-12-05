@@ -7,10 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-12-05
+
+### Added
+
+- **TelexMethodV2**: Complete rewrite using syllable-based architecture
+- `Syllable` struct for Vietnamese syllable representation
+- `Tone` enum with all Vietnamese tone marks
+- `Modification` enum for letter modifications (circumflex, breve, horn, d-stroke)
+- Comprehensive tone application logic (300+ character combinations)
+- Demo UI with ratatui for real-time Vietnamese input testing
+
+### Changed
+
+- **BREAKING**: Recommended to use `telex_v2` instead of `telex` for better accuracy
+- Demo UI now uses TelexMethodV2 by default
+- Improved transformation pipeline (letter mods → tone marks)
+- Always return complete syllable (fixes sync issues)
+
 ### Fixed
 
-- Integration tests updated for new architecture
-- Clippy warnings addressed
+- Buffer desynchronization issues in old Telex implementation
+- Unicode handling in character transformations
+- Backspace count calculation
+- Double key input bug in demo UI
 
 ## [0.2.0] - 2025-12-05
 
