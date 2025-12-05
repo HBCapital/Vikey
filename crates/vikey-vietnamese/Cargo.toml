@@ -1,0 +1,16 @@
+[package]
+name = "vikey-vietnamese"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Vietnamese language processing for Vikey IME"
+authors = ["Vikey Contributors"]
+
+[dependencies]
+vikey-core = { path = "../vikey-core" }
+unicode-normalization = { workspace = true }
+lazy_static = { workspace = true }
+
+[lib]
+name = "vikey_vietnamese"
+path = "src/lib.rs"

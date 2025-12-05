@@ -1,0 +1,18 @@
+[package]
+name = "vikey-core"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Core processing engine for Vikey Vietnamese IME"
+authors = ["Vikey Contributors"]
+
+[dependencies]
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+[dev-dependencies]
+criterion = "0.5"
+
+[lib]
+name = "vikey_core"
+path = "src/lib.rs"
