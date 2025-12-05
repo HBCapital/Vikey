@@ -5,14 +5,14 @@
 **Ngày phân tích**: 2025-12-05
 
 > [!IMPORTANT] > **Quyết định cuối cùng**: Vikey sử dụng kiến trúc **Monorepo**, KHÔNG có plugin system.  
-> Level 3 (Full Plugin) đã được thay thế bằng **Contribute to Monorepo**.  
-> Xem: [`plugin-vs-monorepo.md`](plugin-vs-monorepo.md)
+> Thêm ngôn ngữ/bộ gõ mới → Đóng góp vào repository chính qua PR.  
+> Xem: [`plugin-vs-monorepo.md`](plugin-vs-monorepo.md) và [`CONTRIBUTING.md`](../../CONTRIBUTING.md)
 
 ---
 
 ## 1. Các Mức Độ Tùy Chỉnh
 
-Có 3 mức độ user có thể tùy chỉnh bộ gõ:
+Có 2 mức độ user có thể tùy chỉnh bộ gõ:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -22,10 +22,20 @@ Có 3 mức độ user có thể tùy chỉnh bộ gõ:
 │                    Mức 2: Schema Definition (Trung bình)            │
 │  User định nghĩa schema mới bằng file config (YAML/TOML)            │
 │  Ví dụ: Tạo "My-Telex" với quy tắc riêng                            │
-├─────────────────────────────────────────────────────────────────────┤
-│                    Mức 3: Full Plugin (Nâng cao)                    │
-│  User viết code Rust/WASM để tạo một bộ gõ hoàn toàn mới            │
-│  Ví dụ: Tạo bộ gõ cho ngôn ngữ chưa được hỗ trợ                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│         Ngôn Ngữ Mới → Đóng Góp Vào Monorepo (Nâng cao)             │
+│                                                                     │
+│  Developer muốn thêm ngôn ngữ mới:                                  │
+│  1. Fork repository                                                 │
+│  2. Tạo crate: crates/vikey-xxx/                                    │
+│  3. Implement LanguagePlugin trait                                  │
+│  4. Submit PR → Review → Merge                                      │
+│  5. Trở thành Maintainer cho crate đó                               │
+│                                                                     │
+│  ❌ KHÔNG có plugin system vì lý do bảo mật                         │
+│  ✅ Tất cả code trong cùng repository, có thể audit                 │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -211,125 +221,106 @@ impl InputMethodTrait for SchemaInputMethod {
 
 ---
 
-## 4. Mức 3: Full Plugin (WASM/Native)
+## 4. Thêm Ngôn Ngữ Mới → Đóng Góp Vào Monorepo
 
-### 4.1 Mô Tả
+> **Lưu ý**: Đây KHÔNG phải plugin system. Tất cả code nằm trong cùng repository.
 
-User viết code (Rust hoặc compile sang WASM) để implement `InputMethodTrait` hoàn toàn.
+### 4.1 Tại Sao Không Dùng Plugin?
 
-### 4.2 Ví Dụ Plugin Interface
+Xem phân tích chi tiết: [`plugin-vs-monorepo.md`](plugin-vs-monorepo.md)
 
-```rust
-// Crate: vikey-plugin-sdk
+**Tóm tắt**:
 
-/// Plugin metadata
-#[derive(Debug, Serialize, Deserialize)]
-pub struct PluginManifest {
-    pub name: String,
-    pub id: String,
-    pub version: String,
-    pub author: String,
-    pub description: String,
-    pub license: String,
+- ❌ Plugin = potential keylogger (có quyền truy cập mọi keystroke)
+- ❌ Không kiểm soát được supply chain
+- ❌ Khó đạt chứng nhận bảo mật cấp quốc gia
+- ✅ Monorepo = auditability, security, certification
 
-    /// Entry point (WASM hoặc shared library)
-    pub entry_point: EntryPoint,
+### 4.2 Quy Trình Đóng Góp
 
-    /// Dependencies
-    pub dependencies: Vec<Dependency>,
-}
+```
+Developer muốn thêm ngôn ngữ mới (ví dụ: Tiếng Mường):
 
-#[derive(Debug)]
-pub enum EntryPoint {
-    /// WebAssembly module
-    Wasm { path: PathBuf },
+1. Mở Issue (RFC)
+   └─> Đề xuất ngôn ngữ, Unicode block, input method
 
-    /// Native shared library (.dll/.so/.dylib)
-    Native { path: PathBuf },
-}
+2. Community Review (30 ngày)
+   └─> Core team + Language experts review
 
-/// Plugin phải implement trait này
-pub trait VikeyPlugin: Send + Sync {
-    /// Thông tin plugin
-    fn manifest(&self) -> &PluginManifest;
+3. Fork Repository
+   └─> git clone https://github.com/YOUR_USERNAME/vikey.git
 
-    /// Tạo LanguagePlugin instance
-    fn create_language_plugin(&self) -> Box<dyn LanguagePlugin>;
-}
+4. Tạo Crate
+   └─> mkdir -p crates/vikey-muong/src
+
+5. Implement LanguagePlugin
+   └─> impl LanguagePlugin for MuongPlugin { ... }
+
+6. Viết Tests (coverage >= 80%)
+   └─> cargo test
+
+7. Submit PR
+   └─> Review bởi Core Team + Language Experts
+
+8. Merge vào Main
+   └─> Bạn trở thành Maintainer cho crate đó
 ```
 
-### 4.3 Ví Dụ WASM Plugin
+### 4.3 Ví Dụ Implementation
 
 ```rust
-// user-wasm-plugin/src/lib.rs
+// crates/vikey-muong/src/lib.rs
 
-use vikey_plugin_sdk::*;
-use wasm_bindgen::prelude::*;
+use vikey_core::traits::{LanguagePlugin, InputMethodTrait, LookupProvider, LanguageRules};
 
-#[wasm_bindgen]
-pub struct MyCustomPlugin;
+pub struct MuongPlugin {
+    lookup: MuongLookup,
+    rules: MuongRules,
+}
 
-#[wasm_bindgen]
-impl MyCustomPlugin {
-    #[wasm_bindgen(constructor)]
-    pub fn new() -> Self { Self }
+impl LanguagePlugin for MuongPlugin {
+    fn name(&self) -> &str { "Tiếng Mường" }
+    fn id(&self) -> &str { "muong" }
 
-    pub fn process(&mut self, key: char, buffer_json: &str) -> String {
-        // Custom logic hoàn toàn
-        // ...
-        serde_json::to_string(&action).unwrap()
+    fn input_methods(&self) -> Vec<&str> {
+        vec!["telex-muong"]
     }
+
+    fn create_input_method(&self, id: &str) -> Option<Box<dyn InputMethodTrait>> {
+        match id {
+            "telex-muong" => Some(Box::new(MuongTelexMethod::new())),
+            _ => None,
+        }
+    }
+
+    fn lookup(&self) -> &dyn LookupProvider { &self.lookup }
+    fn rules(&self) -> &dyn LanguageRules { &self.rules }
 }
 ```
 
-### 4.4 Ưu/Nhược Điểm
+### 4.4 Lợi Ích Của Monorepo
 
-| Ưu điểm                   | Nhược điểm                        |
-| ------------------------- | --------------------------------- |
-| Tự do hoàn toàn           | Cần biết lập trình Rust/WASM      |
-| Có thể tạo bộ gõ mới 100% | Security risk (sandboxing cần)    |
-| Full access to Vikey APIs | Compilation/distribution phức tạp |
-| Native performance        | Maintenance burden on user        |
+| Lợi Ích                 | Mô Tả                                             |
+| ----------------------- | ------------------------------------------------- |
+| **Auditability**        | Toàn bộ code có thể audit                         |
+| **Security**            | Không có code bên ngoài load lúc runtime          |
+| **Unified Build**       | Một lệnh build tất cả, tối ưu hóa toàn cục        |
+| **Version Control**     | Tất cả components có cùng version                 |
+| **Certification**       | Có thể đạt chứng nhận Common Criteria, FIPS       |
+| **Trusted Maintainers** | Mỗi ngôn ngữ có maintainer riêng, được core trust |
 
 ---
 
 ## 5. So Sánh Với RIME
 
-| Aspect            | RIME                   | Vikey (Đề xuất) |
-| ----------------- | ---------------------- | --------------- |
-| **Config format** | YAML                   | TOML/YAML       |
-| **Algebra DSL**   | Custom (xform, derive) | Regex-based     |
-| **Dictionary**    | Text + compiled trie   | FST (fst crate) |
-| **Plugin system** | Lua scripts            | WASM + Native   |
-| **Sandboxing**    | Limited                | WASM sandbox    |
-| **Performance**   | C++ native             | Rust native     |
-
-### 5.1 RIME Algebra DSL (Tham khảo)
-
-```yaml
-# RIME syntax
-speller:
-  algebra:
-    - derive/^([zcs])h/$1/ # zh, ch, sh → z, c, s
-    - xform/^([nl])v/$1ü/ # lv, nv → lü, nü
-    - abbrev/^([a-z]).+$/$1/ # Viết tắt: beijng → b
-```
-
-### 5.2 Vikey Đề Xuất (Đơn giản hóa)
-
-```toml
-# Vikey syntax (dễ đọc hơn)
-[[algebra]]
-pattern = "aa"
-replace = "â"
-type = "mark"
-
-[[algebra]]
-pattern = "([aeiouyăâêôơư])s$"
-replace = "$1́"
-type = "tone"
-regex = true
-```
+| Aspect            | RIME                   | Vikey                          |
+| ----------------- | ---------------------- | ------------------------------ |
+| **Config format** | YAML                   | TOML/YAML                      |
+| **Algebra DSL**   | Custom (xform, derive) | Regex-based                    |
+| **Dictionary**    | Text + compiled trie   | FST (fst crate)                |
+| **Extensibility** | Lua scripts            | ❌ Không plugin, ✅ Contribute |
+| **Security**      | Limited                | High (monorepo)                |
+| **Performance**   | C++ native             | Rust native                    |
 
 ---
 
@@ -341,7 +332,6 @@ regex = true
 | ----- | ------------------------ | ---------- | ------ |
 | 1     | Key Remapping            | Cao        | Thấp   |
 | 2     | Schema Definition (TOML) | Cao        | Trung  |
-| 3     | WASM Plugin              | Thấp       | Cao    |
 
 ### 6.2 Cấu Trúc Thư Mục User
 
@@ -349,12 +339,9 @@ regex = true
 ~/.config/vikey/
 ├── config.toml              # Main config
 ├── remapping.toml           # Level 1: Key remapping
-├── schemas/                 # Level 2: Custom schemas
-│   ├── my-telex.yaml
-│   └── my-vni.yaml
-└── plugins/                 # Level 3: Full plugins
-    ├── my-plugin.wasm
-    └── my-plugin.manifest.toml
+└── schemas/                 # Level 2: Custom schemas
+    ├── my-telex.yaml
+    └── my-vni.yaml
 ```
 
 ### 6.3 Loading Priority
@@ -365,22 +352,16 @@ pub struct InputMethodLoader {
     builtin_methods: HashMap<String, Box<dyn InputMethodTrait>>,
     user_schemas: HashMap<String, SchemaDefinition>,
     user_remapping: Option<RemappingConfig>,
-    user_plugins: Vec<Box<dyn VikeyPlugin>>,
 }
 
 impl InputMethodLoader {
     pub fn get_method(&self, id: &str) -> Option<Box<dyn InputMethodTrait>> {
-        // 1. Check user plugins first
-        if let Some(plugin) = self.user_plugins.find(id) {
-            return Some(plugin.create_input_method());
-        }
-
-        // 2. Check user schemas
+        // 1. Check user schemas
         if let Some(schema) = self.user_schemas.get(id) {
             return Some(Box::new(SchemaInputMethod::from(schema)));
         }
 
-        // 3. Fallback to built-in with optional remapping
+        // 2. Fallback to built-in with optional remapping
         if let Some(method) = self.builtin_methods.get(id) {
             return self.wrap_with_remapping(method);
         }
@@ -396,22 +377,22 @@ impl InputMethodLoader {
 
 ### User Định Nghĩa Được Tới Đâu?
 
-| Mức độ              | User có thể làm                 | User KHÔNG thể làm                |
-| ------------------- | ------------------------------- | --------------------------------- |
-| **Level 1: Remap**  | Đổi phím trigger                | Thêm quy tắc mới                  |
-| **Level 2: Schema** | Định nghĩa quy tắc mới, từ điển | Thêm logic phức tạp               |
-| **Level 3: Plugin** | Mọi thứ (full control)          | Chỉ giới hạn bởi security sandbox |
+| Mức độ              | User có thể làm                 | User KHÔNG thể làm  |
+| ------------------- | ------------------------------- | ------------------- |
+| **Level 1: Remap**  | Đổi phím trigger                | Thêm quy tắc mới    |
+| **Level 2: Schema** | Định nghĩa quy tắc mới, từ điển | Thêm logic phức tạp |
+
+### Developer Muốn Thêm Ngôn Ngữ Mới?
+
+→ **Đóng góp vào Monorepo** qua PR, KHÔNG phải viết plugin.
+
+Xem hướng dẫn: [`CONTRIBUTING.md`](../../CONTRIBUTING.md)
 
 ### Khuyến Nghị
 
 1. **Phase 1 (MVP)**: Implement Level 1 (Remapping) - đáp ứng 80% nhu cầu
 2. **Phase 2**: Implement Level 2 (Schema) - cho power users
-3. **Phase 3**: Implement Level 3 (WASM) - cho developers
-
-### "Bỏ qua" vs "Chuyển sang bộ gõ mới"
-
-- **Level 1-2**: User _mở rộng_ bộ gõ có sẵn, không thay thế hoàn toàn
-- **Level 3**: User có thể tạo bộ gõ **hoàn toàn mới**, bỏ qua built-in methods
+3. **Ngôn ngữ mới**: Đóng góp vào monorepo, không plugin system
 
 ---
 
