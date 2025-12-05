@@ -182,7 +182,7 @@ fn apply_tone(vowel: &str, tone: Option<Tone>) -> String {
     let mut result = String::new();
     let mut tone_applied = false;
     
-    for (i, &ch) in chars.iter().enumerate() {
+    for &ch in chars.iter() {
         if !tone_applied && is_vowel(ch) {
             result.push(apply_tone_to_char(ch, tone));
             tone_applied = true;
