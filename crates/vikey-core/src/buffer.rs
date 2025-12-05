@@ -207,13 +207,18 @@ mod tests {
     fn test_throw_buffer() {
         let mut buffer = InputBuffer::new();
         
-        // Fill buffer beyond capacity
+        // Fill buffer beyond capacity (40)
         for i in 0..50 {
             buffer.push(char::from_digit(i % 10, 10).unwrap(), true);
         }
         
-        // Should keep only last KEYS_MAINTAIN characters
-        assert_eq!(buffer.len(), KEYS_MAINTAIN);
+        // After pushing 50 chars:
+        // - First 40 chars fill buffer
+        // - 41st char triggers throw_buffer, keeps last 20, then adds 41st = 21
+        // - 42nd char adds to 22
+        // - ...
+        // - 50th char -> buffer has 30 chars
+        assert_eq!(buffer.len(), 30);
     }
 
     #[test]

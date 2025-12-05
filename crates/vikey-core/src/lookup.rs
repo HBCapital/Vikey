@@ -48,6 +48,11 @@ impl LookupTable {
             is_separator: (entry & SEPARATOR_FLAG) != 0,
             is_soft_separator: (entry & SOFT_SEP_FLAG) != 0,
             vni_double_index: ((entry & VNI_DOUBLE_MASK) >> 26) as u8,
+            // NEW: Phase 2 fields - initialized to defaults
+            word_form: crate::types::WordForm::Empty,
+            c1_offset: None,
+            v_offset: None,
+            c2_offset: None,
         }
     }
 

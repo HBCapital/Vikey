@@ -1,244 +1,372 @@
-# Kiến Trúc Vikey
+# Kiến Trúc Vikey - Quyết Định Cuối Cùng
 
-## Tổng Quan
+> Tài liệu tổng hợp toàn bộ nghiên cứu và chốt phương án kiến trúc, công nghệ cho Vikey.
 
-Vikey được thiết kế theo kiến trúc **Core/Shell Separation** (Tách biệt Lõi/Vỏ) để đảm bảo tính linh hoạt và khả năng tái sử dụng tối đa.
+**Ngày chốt**: 2025-12-05
 
-### Triết Lý Thiết Kế
+---
 
-1.  **Core (Lõi)**: Là một thư viện Rust thuần túy (Library), không phụ thuộc vào giao diện người dùng hay hệ điều hành cụ thể. Có thể nhúng vào bất kỳ ứng dụng nào (Game, WebAssembly, Embedded).
-2.  **Shell (Vỏ)**: Là ứng dụng thực thi (Application), chịu trách nhiệm tương tác với Hệ điều hành (Windows/macOS/Linux), quản lý cấu hình và giao diện người dùng.
+## 1. Triết Lý Thiết Kế
 
-## Cấu Trúc Tổng Thể
+Vikey được thiết kế theo nguyên tắc **Core/Shell Separation** kết hợp **Broker Pattern**:
 
+1. **Core (Lõi)**: Thư viện Rust thuần túy, không phụ thuộc vào UI hay OS cụ thể
+2. **Broker (Trung Gian)**: Service/Process có đặc quyền cao để vượt qua các rào cản bảo mật
+3. **Shell (Vỏ)**: Các lightweight bridge cho từng platform, chỉ forward keystrokes
+
+---
+
+## 2. Mô Hình Kiến Trúc: Broker Pattern
+
+Sau khi phân tích các ràng buộc bảo mật của Modern OS (Wayland, macOS Secure Input, Windows UIPI), Vikey áp dụng **Broker Pattern**:
+
+```mermaid
+graph TD
+    subgraph "Platform Bridges (Lightweight)"
+        W[vikey-windows-tsf]
+        M[vikey-macos-imk]
+        L[vikey-wayland]
+    end
+
+    subgraph "Engine Service (Privileged)"
+        B[vikey-broker]
+        B --> C[vikey-core]
+        B --> V[vikey-vietnamese]
+        B --> N[vikey-nom]
+    end
+
+    subgraph "UI Layer"
+        U[Candidate Window]
+    end
+
+    W -->|IPC| B
+    M -->|IPC| B
+    L -->|Wayland Protocol| B
+    B -->|Graphics| U
+
+    style B fill:#f9f,stroke:#333
+    style C fill:#bbf,stroke:#333
 ```
-┌─────────────────────────────────────┐
-│          Application Shell          │
-│       (vikey-cli / vikey-gui)       │
-│  [OS Integration, UI, Config Mgmt]  │
-└──────────────────┬──────────────────┘
-                   │
-                   ▼
-┌─────────────────────────────────────┐
-│             Core Library            │
-│            (vikey-core)             │
-│   [Logic, State, Transformation]    │
-└──────────────────┬──────────────────┘
-                   │
-          ┌────────┴────────┐
-          ▼                 ▼
-  ┌───────────────┐  ┌─────────────────┐
-  │vikey-vietnamese│  │ vikey-platform  │
-  │ (Input Rules) │  │ (OS Adapters)   │
-  └───────────────┘  └─────────────────┘
-```
 
-## Cấu Trúc Workspace
+### 2.1 Lý Do Chọn Broker Pattern
+
+| Vấn đề                 | Giải pháp bằng Broker Pattern                                    |
+| ---------------------- | ---------------------------------------------------------------- |
+| **Windows UIPI**       | Broker chạy với `uiAccess=true`, ký số, cài trong Program Files  |
+| **macOS Secure Input** | Broker detect và tự động disable để tránh block app              |
+| **Wayland Popup**      | Broker giao tiếp với Compositor qua `zwp_input_popup_surface_v2` |
+| **Đồng bộ từ điển**    | Broker giữ state duy nhất, các bridge chỉ forward keystrokes     |
+| **Mobile Sandbox**     | Core logic offline-first, không yêu cầu `INTERNET` mặc định      |
+
+---
+
+## 3. Cấu Trúc Crates
 
 ```
 vikey/
-├── Cargo.toml              # Cấu hình Workspace
 ├── crates/
-│   ├── vikey-core/         # Core processing engine (Xử lý chính)
-│   ├── vikey-vietnamese/   # Vietnamese input methods (Bộ gõ tiếng Việt)
-│   ├── vikey-platform/     # Platform integrations (Tích hợp hệ điều hành)
-│   └── vikey-config/       # Configuration management (Quản lý cấu hình)
-├── docs/                   # Tài liệu
-└── references/             # Mã nguồn tham khảo
+│   ├── vikey-core/           # 🔵 Core engine (Platform Agnostic)
+│   │   ├── src/
+│   │   │   ├── buffer.rs     # Ring buffer management
+│   │   │   ├── state.rs      # State machine
+│   │   │   ├── processor.rs  # Key processing
+│   │   │   └── action.rs     # Output actions
+│   │   └── Cargo.toml
+│   │
+│   ├── vikey-vietnamese/     # 🟢 Tiếng Việt hiện đại
+│   │   ├── src/
+│   │   │   ├── telex.rs      # Telex transformer
+│   │   │   ├── vni.rs        # VNI transformer
+│   │   │   ├── tone.rs       # Tone placement algorithm
+│   │   │   └── tables.rs     # Character tables (DT-style)
+│   │   └── Cargo.toml
+│   │
+│   ├── vikey-nom/            # 🟡 Chữ Nôm & Tiếng Việt cổ
+│   │   ├── src/
+│   │   │   ├── nom.rs        # Nôm transformer
+│   │   │   └── dict.rs       # Nôm dictionary (Wiktionary data)
+│   │   └── Cargo.toml
+│   │
+│   ├── vikey-broker/         # 🟣 Engine Service (Privileged)
+│   │   ├── src/
+│   │   │   ├── ipc.rs        # IPC server (Named Pipe/Unix Socket)
+│   │   │   ├── service.rs    # Windows Service / macOS LaunchAgent
+│   │   │   └── config.rs     # Configuration management
+│   │   └── Cargo.toml
+│   │
+│   └── platform/             # 🟠 Platform Bridges
+│       ├── vikey-windows-tsf/    # Windows TSF DLL
+│       ├── vikey-macos-imk/      # macOS InputMethodKit Bundle
+│       └── vikey-wayland/        # Linux Wayland IME
+│
+├── Cargo.toml                # Workspace root
+└── docs/
+    └── ARCHITECTURE.md       # File này
 ```
 
-## Các Crate Chính
+---
 
-### 1. vikey-core (`crates/vikey-core`)
+## 4. Công Nghệ & Kỹ Thuật Cuối Cùng
 
-Core engine xử lý input, độc lập với platform (platform-agnostic):
+### 4.1 Core Engine (`vikey-core`, `vikey-vietnamese`)
 
-- **Processor**: Xử lý sự kiện phím (key events) và điều phối
-- **Buffer**: Quản lý bộ đệm input
-- **State Machine**: Quản lý trạng thái (Initial → Buffering → Processing → Committed)
-- **Transform**: Pipeline chuyển đổi ký tự
-- **Types**: Các kiểu dữ liệu chung (KeyEvent, Action, KeyModifiers)
+| Thành Phần            | Công Nghệ                      | Lý Do                                        |
+| --------------------- | ------------------------------ | -------------------------------------------- |
+| **Character Lookup**  | `const [u32; 128]` + `HashMap` | Hybrid: O(1) cho ASCII, O(1) avg cho Unicode |
+| **Buffer**            | `Vec<char>` với Ring buffer    | Rust ownership, no-alloc hot path            |
+| **State Machine**     | Rust `enum` exhaustive match   | Compile-time guarantee cho transitions       |
+| **Unicode Normalize** | `unicode-normalization` crate  | Chuẩn NFC bắt buộc cho input                 |
+| **Tone Placement**    | Port từ UniKey (DT algorithm)  | 20+ năm proven, tối ưu về tốc độ             |
 
-**Dependencies**: `thiserror`, `anyhow`
+### 4.2 Platform Bridges
 
-### 2. vikey-vietnamese (`crates/vikey-vietnamese`)
+| Platform    | Công Nghệ                        | Protocol/API                  |
+| ----------- | -------------------------------- | ----------------------------- |
+| **Windows** | Rust + `windows-rs`              | TSF (Text Services Framework) |
+| **macOS**   | Swift wrapper + Rust FFI         | InputMethodKit                |
+| **Wayland** | `zwp-input-method-service` crate | `input-method-v2` protocol    |
+| **X11**     | `x11rb` crate (legacy support)   | XIM protocol                  |
+| **Android** | Rust + JNI                       | Android IME SDK               |
 
-Logic đặc thù cho tiếng Việt:
+### 4.3 IPC & Broker
 
-- **Telex**: Kiểu gõ Telex (aa → â, aw → ă, dd → đ)
-- **VNI**: Kiểu gõ VNI (a6 → ă, a7 → â)
-- **VIQR**: Kiểu gõ VIQR (a( → ă, a^ → â)
-- **Rules**: Quy tắc tiếng Việt và kiểm tra hợp lệ (validation)
-- **Unicode**: Chuẩn hóa Unicode (NFC)
+| Thành Phần        | Công Nghệ                      | Lý Do                            |
+| ----------------- | ------------------------------ | -------------------------------- |
+| **IPC Protocol**  | Named Pipe (Win) / Unix Socket | Platform native, low latency     |
+| **Serialization** | `serde` + `bincode`            | Zero-copy, compact binary format |
+| **Service**       | `windows-service` / launchd    | OS-native service management     |
+| **Config**        | TOML files                     | Human readable, Rust ecosystem   |
 
-**Dependencies**: `vikey-core`, `unicode-normalization`, `lazy_static`
+### 4.4 Chữ Nôm (`vikey-nom`)
 
-### 3. vikey-platform (`crates/vikey-platform`)
+| Thành Phần     | Công Nghệ               | Lý Do                            |
+| -------------- | ----------------------- | -------------------------------- |
+| **Dictionary** | FST (`fst` crate)       | Memory-efficient, fast lookup    |
+| **Data**       | `rime-ime-han-nom-data` | Proven Telex→Nôm mapping         |
+| **Fallback**   | OpenCC-style conversion | Hán Việt → Nôm character options |
 
-Các implementation đặc thù cho từng platform:
+### 4.5 UI (Candidate Window)
 
-#### Windows
+| Platform    | Công Nghệ                      | Lý Do                              |
+| ----------- | ------------------------------ | ---------------------------------- |
+| **Windows** | WinUI 3 hoặc `egui`            | Modern, hardware accelerated       |
+| **macOS**   | SwiftUI                        | Native macOS look & feel           |
+| **Wayland** | `zwlr_layer_shell_v1` + `egui` | Overlay layer, Compositor position |
+| **Theming** | CSS-like config (TOML)         | User customizable                  |
 
-- Windows API hooks
-- Chặn sự kiện bàn phím
-- Tích hợp IME
+---
 
-#### macOS
+## 5. Quyết Định Thiết Kế Quan Trọng
 
-- Cocoa framework
-- Event tap
-- Tích hợp Input method
-
-#### Linux
-
-- Xử lý sự kiện X11
-- Tích hợp IBus/Fcitx
-- Hỗ trợ Wayland (kế hoạch)
-
-### 4. vikey-config (`crates/vikey-config`)
-
-Quản lý cấu hình:
-
-- Lưu trữ cài đặt người dùng
-- Tùy chọn kiểu gõ
-- Cấu hình giao diện (theme)
-
-## Luồng Xử Lý
-
-```
-User Input → Platform Layer → Processor → Transform → Output
-```
-
-1. **User Input**: Người dùng gõ phím
-2. **Platform Layer**: Bắt KeyEvent từ Hệ điều hành
-3. **Processor**: Xử lý event, quản lý buffer và state
-4. **Transform**: Áp dụng quy tắc tiếng Việt (Telex/VNI/VIQR)
-5. **Output**: Trả về Action (Replace/Commit/DoNothing)
-
-## Mẫu Thiết Kế (Design Patterns)
-
-### 1. Strategy Pattern
-
-Trait `Transformer` cho các kiểu gõ (input methods):
+### 5.1 Hot Path Optimization (Học từ UniKey)
 
 ```rust
-pub trait Transformer {
-    fn transform(&self, input: &str) -> Option<TransformResult>;
-    fn name(&self) -> &str;
+// Bit-packed lookup table cho ký tự thường gặp (O(1))
+const CHAR_ATTRS: [u32; 128] = [
+    // Bit layout: [vowel_idx:5][tone_idx:4][flags:23]
+    // Precomputed at compile time
+];
+
+#[inline(always)]
+fn is_vowel(c: char) -> bool {
+    if c.is_ascii() {
+        (CHAR_ATTRS[c as usize] & 0x1F) > 0
+    } else {
+        VOWEL_SET.contains(&c)
+    }
 }
 ```
 
-### 2. State Machine Pattern
+### 5.2 Modular Transformer (Học từ OpenKey)
 
-Quản lý trạng thái input:
+```rust
+// Trait cho các input method
+pub trait Transformer: Send + Sync {
+    fn name(&self) -> &str;
+    fn transform(&self, buffer: &Buffer, key: KeyEvent) -> Option<TransformResult>;
+    fn can_undo(&self, buffer: &Buffer) -> bool;
+}
 
-```
-Initial → Buffering → Processing → Committed
-                ↑          │
-                └──────────┘
-```
-
-### 3. Platform Abstraction
-
-`vikey-platform` trừu tượng hóa mã nguồn đặc thù của platform với giao diện chung (common interface).
-
-## Biểu Đồ Phụ Thuộc (Dependency Graph)
-
-```
-vikey-cli (planned)
-├── vikey-config
-├── vikey-core
-│   └── (thiserror, anyhow)
-├── vikey-vietnamese
-│   ├── vikey-core
-│   └── (unicode-normalization, lazy_static)
-└── vikey-platform
-    └── (windows/cocoa/x11 - conditional)
+// Dễ mở rộng cho các ngôn ngữ khác
+pub struct TelexTransformer;
+pub struct VNITransformer;
+pub struct NomTransformer;
+pub struct TaiVietTransformer;
 ```
 
-## Chiến Lược Kiểm Thử (Testing Strategy)
+### 5.3 Secure Mode Detection
 
-- **Unit Tests**: Mỗi crate có tests trong `src/*.rs`
-- **Integration Tests**: Test tương tác giữa các crates
-- **Platform Tests**: Test trên từng platform
+```rust
+// Tự động disable khi gặp password field
+pub trait SecureModeAware {
+    fn is_secure_mode(&self) -> bool;
+}
 
-```bash
-cargo test              # Chạy tất cả tests
-cargo test -p vikey-core       # Test crate cụ thể
+impl Processor {
+    pub fn process_key(&mut self, event: KeyEvent) -> Action {
+        if self.platform.is_secure_mode() {
+            return Action::Passthrough; // Không xử lý
+        }
+        // ...
+    }
+}
 ```
 
-## Lộ Trình Phát Triển (Roadmap)
+### 5.4 Offline-First Strategy
 
-### Giai Đoạn 1: MVP (Hiện Tại)
+```rust
+// Không yêu cầu network cho core functionality
+pub struct Config {
+    pub cloud_sync: CloudSyncConfig,
+}
 
-1. **Core Engine**: Xử lý Telex/VNI cơ bản
-2. **Platform Support**: Windows, macOS, Linux (X11)
-3. **Unicode**: Hỗ trợ NFC/NFD
-4. **Basic UI**: Cấu hình đơn giản
-
-### Giai Đoạn 2: Mở Rộng Tính Năng
-
-#### 2.1 Hỗ Trợ Ngôn Ngữ Dân Tộc Thiểu Số
-
-**Tiếng Việt Cổ & Chữ Nôm:**
-
-- Chữ Nôm (𡨸喃): Hỗ trợ Unicode Extension B, C, D
-- Tiếng Việt cổ: Các dấu thanh và ký tự không còn sử dụng
-- Input method: Telex mở rộng cho Nôm
-- Font rendering: Tích hợp font Nôm (HAN NOM A, B)
-
-**Ngôn Ngữ Dân Tộc:**
-
-- **Chữ Thái** (Tày, Nùng, Thái): Unicode U+1A20–U+1AAF
-- **Chữ Mường**: Dựa trên chữ Latinh mở rộng
-- **Chữ H'Mông**: Pahawh Hmong (U+16B00–U+16B8F), Pollard (U+A4D0–U+A4FF)
-- **Chữ Chăm**: Cham script (U+AA00–U+AA5F)
-
-**Tính năng:**
-
-- Bộ gõ riêng cho từng ngôn ngữ
-- Từ điển và gợi ý thông minh
-- Chuyển đổi giữa các hệ chữ viết
-- Hỗ trợ rendering đúng cho các ký tự phức tạp
-
-#### 2.2 Voice-to-Text (Giọng Nói Sang Văn Bản)
-
-**Kiến trúc:**
-
-```
-Microphone → Audio Processing → Speech Recognition → Text Output
-                                        ↓
-                                Vietnamese Language Model
-                                        ↓
-                                Vikey Engine (Post-processing)
+pub struct CloudSyncConfig {
+    pub enabled: bool,  // Default: false (opt-in)
+    pub agent: Option<PathBuf>,  // Separate process
+}
 ```
 
-**Tính năng:**
+---
 
-- **Offline Mode**: Sử dụng model nhẹ (Whisper tiny/base)
-- **Online Mode**: Tích hợp Google Speech API / Azure Speech
-- **Hybrid Mode**: Offline + cloud fallback
-- **Accent Support**: Miền Bắc, Trung, Nam
-- **Punctuation**: Tự động thêm dấu câu
-- **Commands**: Voice commands để điều khiển (bật/tắt, chuyển kiểu gõ)
+## 6. Performance Targets
 
-**Technical Stack:**
+| Metric            | Target  | Cách đạt được                        |
+| ----------------- | ------- | ------------------------------------ |
+| Latency/keystroke | < 5ms   | Bit-packed tables, no-alloc hot path |
+| Memory usage      | < 15MB  | FST dictionary, lazy loading         |
+| Binary size       | < 2MB   | LTO, strip symbols                   |
+| Startup time      | < 100ms | Lazy initialization, async dict load |
+| IPC roundtrip     | < 1ms   | Unix Socket/Named Pipe, bincode      |
 
-- **Speech Recognition**: Whisper (OpenAI), Vosk, hoặc cloud APIs
-- **Audio Processing**: `cpal` crate (Rust audio)
-- **VAD**: Voice Activity Detection để tiết kiệm tài nguyên
-- **Post-processing**: Vikey engine để chuẩn hóa Unicode, sửa lỗi
+---
 
-**Challenges:**
+## 7. Phụ Thuộc Chính (Dependencies)
 
-- Độ chính xác với giọng địa phương
-- Latency (mục tiêu < 500ms)
-- Privacy (ưu tiên offline mode)
-- Resource usage (CPU/Memory cho model)
+### Core Crates
 
-### Giai Đoạn 3: Nâng Cao
+```toml
+[dependencies]
+# Unicode
+unicode-normalization = "0.1"
 
-1. **Machine Learning**: Gợi ý thông minh dựa trên ngữ cảnh
-2. **Cloud Sync**: Đồng bộ cấu hình và từ điển cá nhân
-3. **Plugin System**: Mở rộng tính năng qua plugins
-4. **Multi-language**: Hỗ trợ các ngôn ngữ khác (Lào, Khmer, Thái Lan)
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+bincode = "1.3"
+
+# Config
+toml = "0.8"
+
+# Logging
+tracing = "0.1"
+```
+
+### Platform-Specific
+
+```toml
+# Windows
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.52", features = ["Win32_UI_TextServices"] }
+
+# Wayland
+[target.'cfg(target_os = "linux")'.dependencies]
+zwp-input-method-service = "0.1"
+wayland-client = "0.31"
+
+# Dictionary
+fst = "0.4"
+```
+
+---
+
+## 8. Luồng Xử Lý (Processing Flow)
+
+```
+User Input → Platform Bridge → IPC → Broker → Processor → Transform → IPC → Output
+```
+
+1. **User Input**: Người dùng gõ phím
+2. **Platform Bridge**: Bắt KeyEvent từ OS (TSF/IMK/Wayland)
+3. **IPC**: Forward qua Named Pipe/Unix Socket tới Broker
+4. **Broker**: Nhận request, dispatch tới Processor
+5. **Processor**: Xử lý event, quản lý buffer và state
+6. **Transform**: Áp dụng quy tắc tiếng Việt (Telex/VNI/Nôm)
+7. **IPC**: Trả về Action qua IPC
+8. **Output**: Platform Bridge thực hiện Replace/Commit
+
+---
+
+## 9. Tóm Tắt Quyết Định
+
+| Khía Cạnh        | Quyết Định                                        |
+| ---------------- | ------------------------------------------------- |
+| **Architecture** | Broker Pattern + Core/Shell Separation            |
+| **Lookup**       | Hybrid: const array + HashMap                     |
+| **Performance**  | UniKey-style bit manipulation cho hot path        |
+| **Platform**     | TSF (Win), IMK (macOS), input-method-v2 (Wayland) |
+| **IPC**          | Named Pipe/Unix Socket + bincode                  |
+| **Dictionary**   | FST (Finite State Transducer)                     |
+| **Config**       | TOML files                                        |
+| **Network**      | Offline-first, Cloud Sync opt-in                  |
+| **Security**     | Auto-detect Secure Mode, passthrough              |
+
+### Trade-offs Đã Chấp Nhận
+
+1. **Complexity**: Broker pattern phức tạp hơn monolithic
+2. **IPC Overhead**: ~1ms latency thêm cho mỗi keystroke (chấp nhận được)
+3. **Build Complexity**: Cần build riêng cho từng platform
+4. **Chữ Nôm Data**: Phụ thuộc vào `rime-ime-han-nom-data` (GPL)
+
+---
+
+## 10. Các Phương Pháp BẤT HỢP LỆ (KHÔNG Được Sử Dụng)
+
+> [!CAUTION]
+> Các phương pháp sau đây vi phạm security model của OS và KHÔNG được sử dụng trong Vikey.
+
+### 10.1 Windows
+
+| Phương Pháp Bất Hợp Lệ           | Lý Do Cấm                                           |
+| -------------------------------- | --------------------------------------------------- |
+| **SetWindowsHookEx (Global)**    | Không phải API chính thức cho IME, bị chặn bởi UIPI |
+| **Raw Input hooking**            | Không dành cho text input, có thể bị block          |
+| **DLL injection**                | Vi phạm bảo mật, antivirus sẽ flag                  |
+| **Memory patching**              | Vi phạm EULA Windows, không ổn định                 |
+| **Driver-level keyboard filter** | Yêu cầu ký kernel driver, quá phức tạp              |
+| **Chạy không có code signing**   | uiAccess yêu cầu bắt buộc phải ký số                |
+
+**Phương pháp hợp lệ**: Sử dụng **TSF (Text Services Framework)** với code signing.
+
+### 10.2 macOS
+
+| Phương Pháp Bất Hợp Lệ              | Lý Do Cấm                                   |
+| ----------------------------------- | ------------------------------------------- |
+| **CGEventTap không có permission**  | Sẽ fail silently hoặc bị system chặn        |
+| **Cố hoạt động trong Secure Input** | Không thể, OS chặn hoàn toàn                |
+| **KEXT (Kernel Extension)**         | Apple deprecated, không cho phép từ Big Sur |
+| **Phân phối không notarized**       | Gatekeeper sẽ chặn                          |
+| **Yêu cầu SIP disable**             | Không hợp lý cho end-user software          |
+
+**Phương pháp hợp lệ**: Sử dụng **InputMethodKit** với notarization và code signing.
+
+### 10.3 Linux/Wayland
+
+| Phương Pháp Bất Hợp Lệ         | Lý Do Cấm                                 |
+| ------------------------------ | ----------------------------------------- |
+| **XGrabKeyboard trên Wayland** | Không hoạt động, Wayland không hỗ trợ     |
+| **/dev/input trực tiếp**       | Yêu cầu root, không có tọa độ cursor      |
+| **libinput hooking**           | Chỉ dành cho compositor, không cho client |
+| **Fake X11 server**            | Phức tạp, không ổn định                   |
+
+**Phương pháp hợp lệ**: Sử dụng **zwp_input_method_v2 protocol**.
+
+### 10.4 Nguyên Tắc Chung
+
+1. ❌ **KHÔNG** sử dụng bất kỳ phương pháp nào yêu cầu disable security features của OS
+2. ❌ **KHÔNG** cố hoạt động khi OS đã chủ động chặn (Secure Input Mode)
+3. ❌ **KHÔNG** sử dụng driver-level hooks khi có API user-space
+4. ❌ **KHÔNG** phân phối binary không có code signing trên platforms yêu cầu
+5. ✅ **CHỈ** sử dụng các API được thiết kế và khuyến khích bởi OS vendor
+
+---
+
+**Last Updated**: 2025-12-05

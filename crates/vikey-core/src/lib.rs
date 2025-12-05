@@ -10,7 +10,7 @@
 //!
 //! let mut core = VikeyCore::new(Config::default());
 //!
-//! // Process 'a' then 'a' -> should suggest 'â'
+//! // Process 'a' then 'a' -> should get 'â'
 //! let action1 = core.process_key('a');
 //! let action2 = core.process_key('a');
 //!
@@ -21,6 +21,7 @@ mod types;
 mod buffer;
 mod lookup;
 mod spelling;
+mod processor;
 
 pub use types::{
     Action, CharInfo, Config, InputMethod,
@@ -30,24 +31,22 @@ pub use types::{
 pub use buffer::InputBuffer;
 pub use lookup::LookupTable;
 pub use spelling::SpellChecker;
+pub use processor::Processor;
 
 /// Main Vikey Core processor
 pub struct VikeyCore {
     config: Config,
-    lookup: LookupTable,
-    buffer: InputBuffer,
+    processor: Processor,
 }
 
 impl VikeyCore {
     /// Create a new Vikey Core instance with the given configuration
     pub fn new(config: Config) -> Self {
-        let lookup = LookupTable::new(config.input_method);
-        let buffer = InputBuffer::new();
+        let processor = Processor::new(config.input_method);
         
         Self {
             config,
-            lookup,
-            buffer,
+            processor,
         }
     }
 
@@ -55,31 +54,27 @@ impl VikeyCore {
     ///
     /// Returns an Action indicating what should be done (replace text, commit, or do nothing)
     pub fn process_key(&mut self, key: char) -> Action {
-        // For Phase 1, just return DoNothing
-        // Full implementation will come in Phase 2
-        Action::DoNothing
+        self.processor.process(key, &self.config)
     }
 
     /// Process backspace key
     pub fn process_backspace(&mut self) -> Action {
-        if let Some((ch, _)) = self.buffer.pop() {
-            Action::Replace {
-                backspace_count: 1,
-                text: String::new(),
-            }
-        } else {
-            Action::DoNothing
-        }
+        self.processor.process_backspace()
     }
 
     /// Reset the buffer (e.g., when switching applications)
     pub fn reset(&mut self) {
-        self.buffer.clear();
+        self.processor.reset();
     }
 
     /// Get current buffer content (for debugging)
     pub fn buffer_content(&self) -> String {
-        self.buffer.to_string()
+        self.processor.buffer_content()
+    }
+    
+    /// Get transformation history (for debugging/undo)
+    pub fn transformations(&self) -> &[Transformation] {
+        self.processor.transformations()
     }
 }
 
