@@ -168,27 +168,31 @@ fn main() -> Result<()> {
     loop {
         terminal.draw(|f| ui(f, &app))?;
         
+        // Only process KeyPress events, not KeyRelease
         if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                    break;
+            // Filter out key release events
+            if key.kind == crossterm::event::KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                        break;
+                    }
+                    KeyCode::Esc => {
+                        break;
+                    }
+                    KeyCode::Char(c) => {
+                        app.process_key(c);
+                    }
+                    KeyCode::Backspace => {
+                        app.process_backspace();
+                    }
+                    KeyCode::Enter => {
+                        app.process_enter();
+                    }
+                    KeyCode::Tab => {
+                        app.process_space();
+                    }
+                    _ => {}
                 }
-                KeyCode::Esc => {
-                    break;
-                }
-                KeyCode::Char(c) => {
-                    app.process_key(c);
-                }
-                KeyCode::Backspace => {
-                    app.process_backspace();
-                }
-                KeyCode::Enter => {
-                    app.process_enter();
-                }
-                KeyCode::Tab => {
-                    app.process_space();
-                }
-                _ => {}
             }
         }
     }
