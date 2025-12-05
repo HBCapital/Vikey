@@ -175,11 +175,24 @@ impl InputMethodTrait for TelexMethodV2 {
             return action;
         }
         
-        // Add key to syllable
-        self.syllable.push(key);
+        // Try to apply key with transformations
+        let mut temp_syllable = self.syllable.clone();
+        temp_syllable.push(key);
         
-        // Apply transformations
+        // We need to apply transformations to temp_syllable.
+        // Since apply_transformations is a method on self, we can't easily call it on temp.
+        // We'll temporarily swap, apply, check, and swap back if needed.
+        
+        let original_syllable = self.syllable.clone();
+        self.syllable.push(key);
         self.apply_transformations();
+        
+        // Check if permissible
+        if !self.syllable.is_permissible() {
+            // Revert to original + raw key (no transformations)
+            self.syllable = original_syllable;
+            self.syllable.push(key);
+        }
         
         // Get output
         let output = self.syllable.to_string();

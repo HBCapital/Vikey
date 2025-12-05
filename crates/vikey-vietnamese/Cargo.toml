@@ -10,6 +10,7 @@ authors = ["Vikey Contributors"]
 vikey-core = { path = "../vikey-core" }
 unicode-normalization = { workspace = true }
 lazy_static = { workspace = true }
+once_cell = "1.21.3"
 
 [lib]
 name = "vikey_vietnamese"

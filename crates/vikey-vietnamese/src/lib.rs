@@ -6,6 +6,7 @@ pub mod plugin;
 pub mod methods;
 pub mod syllable;
 pub mod rules;
+pub mod validation;
 
 // Re-exports
 pub use plugin::VietnamesePlugin;

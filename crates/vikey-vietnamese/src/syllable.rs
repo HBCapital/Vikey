@@ -111,6 +111,12 @@ impl Syllable {
     pub fn raw_text(&self) -> String {
         format!("{}{}{}", self.initial, self.vowel, self.final_consonant)
     }
+
+    /// Check if syllable structure is permissible
+    pub fn is_permissible(&self) -> bool {
+        use crate::validation::is_permissible_syllable;
+        is_permissible_syllable(&self.initial, &self.vowel, &self.final_consonant)
+    }
 }
 
 impl fmt::Display for Syllable {
