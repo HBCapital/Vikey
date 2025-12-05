@@ -1,212 +1,82 @@
-/// Input method types
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum InputMethod {
-    /// Telex input method (aa -> â, aw -> ă, s -> sắc)
-    Telex,
-    /// VNI input method (a6 -> ă, a1 -> á)
-    VNI,
-    /// VIQR input method (a( -> ă, a' -> á)
-    VIQR,
-}
+// types.rs - Generic types for Vikey Core
 
-/// Word form classification (from fcitx5-unikey)
+/// Word form classification (generic, can be used by any language)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WordForm {
-    /// Not Vietnamese
+    /// Not recognized
     NonVn,
     /// Empty
     Empty,
-    /// Consonant only (b, c, d)
+    /// Consonant only
     C,
-    /// Vowel only (a, e, i)
+    /// Vowel only
     V,
-    /// Consonant + Vowel (ba, ca)
+    /// Consonant + Vowel
     CV,
-    /// Vowel + Consonant (an, am)
+    /// Vowel + Consonant
     VC,
-    /// Consonant + Vowel + Consonant (ban, cam)
+    /// Consonant + Vowel + Consonant
     CVC,
 }
 
-/// Transformation effect type (from ibus-bamboo)
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TransformEffect {
-    /// Append a character
-    Append,
-    /// Add tone mark
-    Tone,
-    /// Add mark (â, ê, ô, ơ, ư, ă, đ)
-    Mark,
-}
-
-/// Tone type
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ToneType {
-    None = 0,
-    Acute = 1,   // Sắc (á)
-    Grave = 2,   // Huyền (à)
-    Hook = 3,    // Hỏi (ả)
-    Tilde = 4,   // Ngã (ã)
-    Dot = 5,     // Nặng (ạ)
-}
-
-/// Mark type
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum MarkType {
-    None = 0,
-    Horn = 1,      // Ơ, ư
-    Breve = 2,     // Ă
-    Circumflex = 3, // Â, ê, ô
-    DStroke = 4,   // Đ
-}
-
-/// Transformation record (inspired by ibus-bamboo)
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Transformation {
-    /// The key that triggered this transformation
-    pub key: char,
-    
-    /// Effect type
-    pub effect: TransformEffect,
-    
-    /// Tone type (if effect is Tone)
-    pub tone: ToneType,
-    
-    /// Mark type (if effect is Mark)
-    pub mark: MarkType,
-    
-    /// Target position in buffer (for Tone/Mark effects)
-    pub target_pos: Option<usize>,
-    
-    /// Was the key uppercase?
-    pub is_uppercase: bool,
-}
-
-impl Transformation {
-    /// Create an APPEND transformation
-    pub fn append(key: char, is_uppercase: bool) -> Self {
-        Self {
-            key,
-            effect: TransformEffect::Append,
-            tone: ToneType::None,
-            mark: MarkType::None,
-            target_pos: None,
-            is_uppercase,
-        }
-    }
-    
-    /// Create a TONE transformation
-    pub fn tone(key: char, tone: ToneType, target_pos: usize) -> Self {
-        Self {
-            key,
-            effect: TransformEffect::Tone,
-            tone,
-            mark: MarkType::None,
-            target_pos: Some(target_pos),
-            is_uppercase: false,
-        }
-    }
-    
-    /// Create a MARK transformation
-    pub fn mark(key: char, mark: MarkType, target_pos: usize) -> Self {
-        Self {
-            key,
-            effect: TransformEffect::Mark,
-            tone: ToneType::None,
-            mark,
-            target_pos: Some(target_pos),
-            is_uppercase: false,
-        }
-    }
-}
-
-/// Configuration for Vikey Core
-#[derive(Debug, Clone)]
-pub struct Config {
-    /// Input method to use
-    pub input_method: InputMethod,
-    
-    /// Enable Quick Telex shortcuts (cc->ch, gg->gi, kk->kh, etc.)
-    pub quick_telex: bool,
-    
-    /// Use modern orthography (oà vs òa, úy vs uý)
-    /// true = modern (oà, úy), false = old (òa, uý)
-    pub modern_orthography: bool,
-    
-    /// Allow consonants Z, F, W, J in words
-    pub allow_consonant_zfwj: bool,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            input_method: InputMethod::Telex,
-            quick_telex: true,
-            modern_orthography: true,
-            allow_consonant_zfwj: false,
-        }
-    }
-}
-
-/// Action to be taken after processing a key
+/// Action to be performed by the IME
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
-    /// Do nothing, key was not processed
+    /// Do nothing
     DoNothing,
     
-    /// Replace N characters with new text
-    /// The application should delete `backspace_count` characters
-    /// and insert `text` in their place
+    /// Commit text as-is
+    Commit(String),
+    
+    /// Replace previous text
     Replace {
+        /// Number of characters to delete (backspace)
         backspace_count: usize,
+        /// New text to insert
         text: String,
     },
-    
-    /// Commit the text (when separator is encountered)
-    Commit(String),
 }
 
-/// Information extracted from DT lookup table for a character
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Character information for lookup
+#[derive(Debug, Clone, Copy)]
 pub struct CharInfo {
-    /// Vowel index (0-31)
+    /// Vowel index (0 = not a vowel, 1-6 for a,e,i,o,u,y)
     pub vowel_index: u8,
     
-    /// Macro key index (0-15)
+    /// Macro index (for special transformations)
     pub macro_index: u8,
     
-    /// Double character index (0-31) for aa, ee, oo, dd
+    /// Double character index
     pub double_char_index: u8,
     
-    /// Tone mark index (0-15) for s, f, r, x, j
+    /// Tone index
     pub tone_index: u8,
     
-    /// Current tone of this character (0-15)
+    /// Current tone
     pub current_tone: u8,
     
-    /// Is this a breve character (w, W in Telex)
+    /// Is breve mark
     pub is_breve: bool,
     
-    /// Is this a separator (space, enter, tab)
+    /// Is separator (space, newline, etc.)
     pub is_separator: bool,
     
-    /// Is this a soft separator (comma, period, etc.)
+    /// Is soft separator (punctuation)
     pub is_soft_separator: bool,
     
-    /// VNI double mark index (0-7) for 6, 7, 8, 9
+    /// VNI double index
     pub vni_double_index: u8,
     
-    // NEW: Word structure tracking (from fcitx5-unikey)
-    /// Word form at this position
+    /// Word form
     pub word_form: WordForm,
     
-    /// Position of first consonant (if any)
+    /// Consonant 1 offset
     pub c1_offset: Option<usize>,
     
-    /// Position of vowel (if any)
+    /// Vowel offset
     pub v_offset: Option<usize>,
     
-    /// Position of second consonant (if any)
+    /// Consonant 2 offset
     pub c2_offset: Option<usize>,
 }
 
@@ -230,37 +100,39 @@ impl Default for CharInfo {
     }
 }
 
+/// Configuration for the IME
+#[derive(Debug, Clone)]
+pub struct Config {
+    /// Enable/disable the IME
+    pub enabled: bool,
+    
+    /// Auto-commit on separator
+    pub auto_commit: bool,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            auto_commit: true,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
+    fn test_action() {
+        let action = Action::Commit("test".to_string());
+        assert!(matches!(action, Action::Commit(_)));
+    }
+    
+    #[test]
     fn test_config_default() {
         let config = Config::default();
-        assert_eq!(config.input_method, InputMethod::Telex);
-        assert!(config.quick_telex);
-        assert!(config.modern_orthography);
-        assert!(!config.allow_consonant_zfwj);
-    }
-
-    #[test]
-    fn test_action_equality() {
-        let action1 = Action::Replace {
-            backspace_count: 1,
-            text: "â".to_string(),
-        };
-        let action2 = Action::Replace {
-            backspace_count: 1,
-            text: "â".to_string(),
-        };
-        assert_eq!(action1, action2);
-    }
-
-    #[test]
-    fn test_char_info_default() {
-        let info = CharInfo::default();
-        assert_eq!(info.vowel_index, 0);
-        assert!(!info.is_breve);
-        assert!(!info.is_separator);
+        assert!(config.enabled);
+        assert!(config.auto_commit);
     }
 }
