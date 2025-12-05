@@ -3,6 +3,7 @@
 use vikey_core::traits::{LanguagePlugin, InputMethodTrait, LookupProvider, LanguageRules};
 use crate::lookup::VietnameseLookup;
 use crate::methods::telex::TelexMethod;
+use crate::methods::telex_v2::TelexMethodV2;
 use crate::methods::vni::VNIMethod;
 use crate::methods::viqr::VIQRMethod;
 
@@ -38,12 +39,13 @@ impl LanguagePlugin for VietnamesePlugin {
     }
     
     fn input_methods(&self) -> Vec<&str> {
-        vec!["telex", "vni", "viqr"]
+        vec!["telex", "telex_v2", "vni", "viqr"]
     }
     
     fn create_input_method(&self, id: &str) -> Option<Box<dyn InputMethodTrait>> {
         match id {
             "telex" => Some(Box::new(TelexMethod::new())),
+            "telex_v2" => Some(Box::new(TelexMethodV2::new())),
             "vni" => Some(Box::new(VNIMethod::new())),
             "viqr" => Some(Box::new(VIQRMethod::new())),
             _ => None,

@@ -5,25 +5,17 @@ use vikey_core::types::Action;
 use vikey_core::InputBuffer;
 use vikey_core::traits::LookupProvider;
 use crate::syllable::{Syllable, Tone, Modification};
-use std::collections::HashMap;
-use lazy_static::lazy_static;
 
-lazy_static! {
-    /// Tone key mappings for Telex
-    static ref TONE_KEYS: HashMap<char, Tone> = {
-        let mut m = HashMap::new();
-        m.insert('s', Tone::Acute);      // sắc
-        m.insert('S', Tone::Acute);
-        m.insert('f', Tone::Grave);      // huyền
-        m.insert('F', Tone::Grave);
-        m.insert('r', Tone::HookAbove);  // hỏi
-        m.insert('R', Tone::HookAbove);
-        m.insert('x', Tone::Tilde);      // ngã
-        m.insert('X', Tone::Tilde);
-        m.insert('j', Tone::Underdot);   // nặng
-        m.insert('J', Tone::Underdot);
-        m
-    };
+/// Get tone from key character
+fn get_tone_from_key(ch: char) -> Option<Tone> {
+    match ch {
+        's' | 'S' => Some(Tone::Acute),      // sắc
+        'f' | 'F' => Some(Tone::Grave),      // huyền
+        'r' | 'R' => Some(Tone::HookAbove),  // hỏi
+        'x' | 'X' => Some(Tone::Tilde),      // ngã
+        'j' | 'J' => Some(Tone::Underdot),   // nặng
+        _ => None,
+    }
 }
 
 /// Telex Input Method with syllable-based processing
@@ -129,7 +121,7 @@ impl TelexMethodV2 {
     fn apply_tone_marks(&mut self) {
         // Check if last character in final_consonant is a tone key
         if let Some(last_char) = self.syllable.final_consonant.chars().last() {
-            if let Some(&tone) = TONE_KEYS.get(&last_char) {
+            if let Some(tone) = get_tone_from_key(last_char) {
                 // Remove tone key from final consonant
                 self.syllable.final_consonant.pop();
                 
