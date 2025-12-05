@@ -1,4 +1,4 @@
-// demo_ui.rs - Terminal UI demo for Vikey Vietnamese Telex
+// demo_ui.rs - Terminal UI demo for Vikey Vietnamese Telex V2
 
 use anyhow::Result;
 use crossterm::{
@@ -29,12 +29,12 @@ impl App {
         let mut engine = Engine::new();
         engine.register(Box::new(VietnamesePlugin::new()))?;
         engine.set_language("vietnamese")?;
-        engine.set_input_method("telex")?;
+        engine.set_input_method("telex_v2")?;  // Using TelexMethodV2
         
         Ok(Self {
             engine,
             output: String::new(),
-            status: "Ready".to_string(),
+            status: "Ready - Using Telex V2".to_string(),
         })
     }
     
@@ -105,7 +105,7 @@ fn ui(f: &mut Frame, app: &App) {
         .split(f.size());
     
     // Title
-    let title = Paragraph::new("🇻🇳 Vikey Demo - Vietnamese Telex Input Method")
+    let title = Paragraph::new("🇻🇳 Vikey Demo - Vietnamese Telex V2 (Syllable-based)")
         .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
         .block(Block::default().borders(Borders::ALL));
     f.render_widget(title, chunks[0]);
@@ -136,9 +136,9 @@ fn ui(f: &mut Frame, app: &App) {
     // Help
     let help_text = vec![
         Line::from("Commands:"),
-        Line::from("  Type Vietnamese: aa→â, aw→ă, s→sắc, f→huyền, etc."),
-        Line::from("  Space: Commit and reset buffer"),
-        Line::from("  Backspace: Undo last transformation"),
+        Line::from("  Type Vietnamese: aa→â, aw→ă, ow→ơ, uw→ư, dd→đ"),
+        Line::from("  Tone marks: s→sắc, f→huyền, r→hỏi, x→ngã, j→nặng"),
+        Line::from("  Space/Tab: Commit and reset buffer"),
         Line::from("  Ctrl+C or Esc: Exit"),
     ];
     let help = Paragraph::new(help_text)
