@@ -1,0 +1,13 @@
+[package]
+name = "vikey-examples"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[example]]
+name = "basic_usage"
+path = "basic_usage.rs"
+
+[dependencies]
+vikey-core = { path = "../crates/vikey-core" }
+vikey-vietnamese = { path = "../crates/vikey-vietnamese" }
