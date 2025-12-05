@@ -1,14 +1,3 @@
-[package]
-name = "vikey-nom"
-version = "0.1.0"
-edition = "2021"
-description = "Chữ Nôm (Han-Nom) language plugin for Vikey"
-license = "Apache-2.0"
-
-[dependencies]
-vikey-core = { path = "../vikey-core" }
-
-# FST for dictionary lookup (memory-efficient)
 fst = "0.4"
 
 # Unicode handling
