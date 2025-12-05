@@ -9,6 +9,7 @@ use crate::methods::viqr::VIQRMethod;
 /// Vietnamese Language Plugin
 pub struct VietnamesePlugin {
     lookup_telex: VietnameseLookup,
+    #[allow(dead_code)]
     lookup_vni: VietnameseLookup,
 }
 
