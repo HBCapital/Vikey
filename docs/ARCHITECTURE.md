@@ -60,48 +60,91 @@ graph TD
 
 ---
 
-## 3. Cấu Trúc Crates
+## 3. Cấu Trúc Crates (Monorepo)
+
+> **Quyết định quan trọng**: Vikey sử dụng kiến trúc **Monorepo**, KHÔNG có plugin system.  
+> Lý do: Dự án cấp quốc gia cần auditability, security, và certification.  
+> Xem chi tiết: [`docs/analysis/plugin-vs-monorepo.md`](analysis/plugin-vs-monorepo.md)
 
 ```
 vikey/
 ├── crates/
-│   ├── vikey-core/           # 🔵 Core engine (Platform Agnostic)
+│   │
+│   ├── vikey-core/              # 🔵 Core engine (Platform Agnostic)
 │   │   ├── src/
-│   │   │   ├── buffer.rs     # Ring buffer management
-│   │   │   ├── state.rs      # State machine
-│   │   │   ├── processor.rs  # Key processing
-│   │   │   └── action.rs     # Output actions
+│   │   │   ├── buffer.rs        # Ring buffer management
+│   │   │   ├── traits.rs        # LanguagePlugin, InputMethodTrait
+│   │   │   ├── engine.rs        # Main orchestrator
+│   │   │   ├── registry.rs      # Language registry
+│   │   │   └── types.rs         # Action, Config, etc.
 │   │   └── Cargo.toml
 │   │
-│   ├── vikey-vietnamese/     # 🟢 Tiếng Việt hiện đại
+│   ├── vikey-vietnamese/        # 🟢 Tiếng Việt hiện đại
 │   │   ├── src/
-│   │   │   ├── telex.rs      # Telex transformer
-│   │   │   ├── vni.rs        # VNI transformer
-│   │   │   ├── tone.rs       # Tone placement algorithm
-│   │   │   └── tables.rs     # Character tables (DT-style)
+│   │   │   ├── telex.rs         # Telex transformer
+│   │   │   ├── vni.rs           # VNI transformer
+│   │   │   ├── viqr.rs          # VIQR transformer
+│   │   │   └── lookup.rs        # Vietnamese lookup tables
 │   │   └── Cargo.toml
 │   │
-│   ├── vikey-nom/            # 🟡 Chữ Nôm & Tiếng Việt cổ
+│   ├── vikey-nom/               # 🟡 Chữ Nôm (𡨸喃)
 │   │   ├── src/
-│   │   │   ├── nom.rs        # Nôm transformer
-│   │   │   └── dict.rs       # Nôm dictionary (Wiktionary data)
+│   │   │   ├── telex_nom.rs     # Telex-Nôm transformer
+│   │   │   ├── dictionary.rs    # FST dictionary
+│   │   │   └── lookup.rs        # CJK lookup tables
 │   │   └── Cargo.toml
 │   │
-│   ├── vikey-broker/         # 🟣 Engine Service (Privileged)
+│   ├── vikey-tai/               # 🟠 Chữ Thái (Tày, Nùng, Thái)
+│   │   └── src/                 # Unicode: U+AA80–U+AADF
+│   │
+│   ├── vikey-cham/              # 🔴 Chữ Chăm
+│   │   └── src/                 # Unicode: U+AA00–U+AA5F
+│   │
+│   ├── vikey-hmong/             # 🟣 Chữ H'Mông (Pahawh Hmong)
+│   │   └── src/                 # Unicode: U+16B00–U+16B8F
+│   │
+│   ├── vikey-ede/               # ⚫ Tiếng Ê-đê (Latin-based)
+│   │   └── src/
+│   │
+│   ├── vikey-bahnar/            # ⚪ Tiếng Ba Na (Latin-based)
+│   │   └── src/
+│   │
+│   ├── vikey-broker/            # 🟤 Engine Service (Privileged)
 │   │   ├── src/
-│   │   │   ├── ipc.rs        # IPC server (Named Pipe/Unix Socket)
-│   │   │   ├── service.rs    # Windows Service / macOS LaunchAgent
-│   │   │   └── config.rs     # Configuration management
+│   │   │   ├── ipc.rs           # IPC server
+│   │   │   └── service.rs       # System service
 │   │   └── Cargo.toml
 │   │
-│   └── platform/             # 🟠 Platform Bridges
-│       ├── vikey-windows-tsf/    # Windows TSF DLL
-│       ├── vikey-macos-imk/      # macOS InputMethodKit Bundle
-│       └── vikey-wayland/        # Linux Wayland IME
+│   └── platform/                # 🔶 Platform Bridges
+│       ├── vikey-windows-tsf/   # Windows TSF DLL
+│       ├── vikey-macos-imk/     # macOS InputMethodKit Bundle
+│       └── vikey-wayland/       # Linux Wayland IME
 │
-├── Cargo.toml                # Workspace root
+├── Cargo.toml                   # Workspace root
+├── CONTRIBUTING.md              # Hướng dẫn đóng góp ngôn ngữ mới
 └── docs/
-    └── ARCHITECTURE.md       # File này
+    └── ARCHITECTURE.md          # File này
+```
+
+### 3.1 Feature Flags
+
+```toml
+# Cargo.toml - cho phép build tùy chọn
+[features]
+default = ["vietnamese"]
+
+vietnamese = ["vikey-vietnamese"]
+nom = ["vikey-nom"]
+ethnic = ["vikey-tai", "vikey-cham", "vikey-hmong", "vikey-ede", "vikey-bahnar"]
+full = ["vietnamese", "nom", "ethnic"]
+```
+
+```bash
+# Build chỉ tiếng Việt (nhỏ gọn)
+cargo build
+
+# Build đầy đủ (cho government deployment)
+cargo build --features full
 ```
 
 ---

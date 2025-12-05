@@ -17,11 +17,16 @@
 //! // action2 should be Replace { backspace_count: 1, text: "â" }
 //! ```
 
-mod types;
+pub mod types;
 mod buffer;
 mod lookup;
 mod spelling;
 mod processor;
+
+// NEW: Plugin system modules
+pub mod traits;
+pub mod registry;
+pub mod engine;
 
 pub use types::{
     Action, CharInfo, Config, InputMethod,
@@ -32,6 +37,11 @@ pub use buffer::InputBuffer;
 pub use lookup::LookupTable;
 pub use spelling::SpellChecker;
 pub use processor::Processor;
+
+// NEW: Plugin system exports
+pub use traits::{LanguagePlugin, InputMethodTrait, LookupProvider, LanguageRules};
+pub use registry::{PluginRegistry, RegistryError};
+pub use engine::Engine;
 
 /// Main Vikey Core processor
 pub struct VikeyCore {

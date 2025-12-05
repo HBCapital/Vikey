@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/vikey-core",
+    "crates/vikey-nom",
     # TODO: Add these when implemented
     # "crates/vikey-vietnamese",
     # "crates/vikey-platform",
