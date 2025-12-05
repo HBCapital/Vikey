@@ -172,30 +172,14 @@ fn apply_tone(vowel: &str, tone: Option<Tone>) -> String {
         return vowel.to_string();
     };
     
-    // Find main vowel to apply tone
-    // For now, simple heuristic: first vowel
-    let chars: Vec<char> = vowel.chars().collect();
-    if chars.is_empty() {
-        return vowel.to_string();
-    }
-    
-    let mut result = String::new();
-    let mut tone_applied = false;
-    
-    for &ch in chars.iter() {
-        if !tone_applied && is_vowel(ch) {
-            result.push(apply_tone_to_char(ch, tone));
-            tone_applied = true;
-        } else {
-            result.push(ch);
-        }
-    }
-    
-    result
+    // Use smart tone placement rules
+    use crate::rules::{place_tone, ToneStyle};
+    place_tone(vowel, tone, ToneStyle::New)
 }
 
 /// Apply tone to a single character
-fn apply_tone_to_char(ch: char, tone: Tone) -> char {
+/// Apply tone to a single character
+pub fn apply_tone_to_char(ch: char, tone: Tone) -> char {
     match (ch.to_lowercase().next().unwrap(), tone) {
         ('a', Tone::Acute) => if ch.is_uppercase() { 'Á' } else { 'á' },
         ('a', Tone::Grave) => if ch.is_uppercase() { 'À' } else { 'à' },
