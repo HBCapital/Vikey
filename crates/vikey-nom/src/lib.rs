@@ -22,10 +22,10 @@
 //! // Gõ "nguoi" → Hiển thị candidate list: 𡦂, 𠊛, ...
 //! ```
 
-pub mod plugin;
-pub mod lookup;
 pub mod dictionary;
+pub mod lookup;
 pub mod methods;
+pub mod plugin;
 pub mod types;
 
 pub use plugin::NomPlugin;

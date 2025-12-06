@@ -2,9 +2,9 @@
 //!
 //! Bảng tra cứu cho ký tự Nôm.
 
+use crate::types::{NomCharInfo, UnicodeBlock};
 use vikey_core::traits::LookupProvider;
 use vikey_core::types::CharInfo;
-use crate::types::{NomCharInfo, UnicodeBlock};
 
 /// Lookup provider cho chữ Nôm
 pub struct NomLookup {
@@ -16,7 +16,7 @@ impl NomLookup {
     pub fn new() -> Self {
         Self {}
     }
-    
+
     /// Kiểm tra ký tự có phải CJK không
     fn is_cjk(c: char) -> bool {
         let cp = c as u32;
@@ -31,7 +31,7 @@ impl NomLookup {
             0x30000..=0x3134F      // Extension G
         )
     }
-    
+
     /// Lấy thông tin Nôm-specific cho ký tự
     pub fn lookup_nom(&self, c: char) -> NomCharInfo {
         let cp = c as u32;
@@ -57,21 +57,21 @@ impl LookupProvider for NomLookup {
             ..CharInfo::default()
         }
     }
-    
+
     fn is_valid_char(&self, c: char) -> bool {
         // Accept Latin (for typing) and CJK (for output)
         c.is_ascii_alphabetic() || Self::is_cjk(c)
     }
-    
+
     fn is_vowel(&self, c: char) -> bool {
         // Latin vowels for typing phiên âm
         matches!(c.to_ascii_lowercase(), 'a' | 'e' | 'i' | 'o' | 'u' | 'y')
     }
-    
+
     fn is_consonant(&self, c: char) -> bool {
         c.is_ascii_alphabetic() && !self.is_vowel(c)
     }
-    
+
     fn is_separator(&self, c: char) -> bool {
         c.is_whitespace() || matches!(c, ',' | '.' | ';' | ':' | '!' | '?')
     }
@@ -80,27 +80,27 @@ impl LookupProvider for NomLookup {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_is_cjk() {
         // 𡨸 (U+21A38) - Extension B
         assert!(NomLookup::is_cjk('𡨸'));
-        
+
         // 喃 (U+5583) - CJK Unified
         assert!(NomLookup::is_cjk('喃'));
-        
+
         // Latin
         assert!(!NomLookup::is_cjk('a'));
     }
-    
+
     #[test]
     fn test_lookup() {
         let lookup = NomLookup::new();
-        
+
         // Latin vowel
         assert!(lookup.is_vowel('a'));
         assert!(!lookup.is_consonant('a'));
-        
+
         // Latin consonant
         assert!(!lookup.is_vowel('b'));
         assert!(lookup.is_consonant('b'));

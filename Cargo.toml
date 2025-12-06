@@ -3,10 +3,12 @@ members = [
     "crates/vikey-core",
     "crates/vikey-nom",
     "crates/vikey-vietnamese",
-    "examples",
     # TODO: Add these when implemented
     # "crates/vikey-platform",
     # "crates/vikey-config",
+    "crates/vikey-app",  # Folder name, not package name
+    "crates/vikey-windows-tsf",  # Windows TSF DLL
+    "crates/vikey-broker",  # Broker service
 ]
 resolver = "2"
 

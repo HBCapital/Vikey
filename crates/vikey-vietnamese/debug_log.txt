@@ -1,0 +1,16 @@
+Key 'd' appended. Syllable: d
+Key 'd' appended. Syllable: d
+Key 'u' appended. Syllable: du
+Key 'd' appended. Syllable: d
+Key 'u' appended. Syllable: du
+Key 'o' appended. Syllable: duo
+Key 'o' appended. Syllable: o
+Key 'o' appended. Syllable: o
+Key 'n' appended. Syllable: on
+Key 'o' appended. Syllable: o
+Key 'n' appended. Syllable: on
+Key 'g' appended. Syllable: ong
+Key 'o' appended. Syllable: o
+Key 'n' appended. Syllable: on
+Key 'g' appended. Syllable: ong
+Key 'w' modified syllable: ơng

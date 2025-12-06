@@ -1,6 +1,6 @@
 // Test file to debug Telex logic issues
 
-use vikey_core::{Engine, Action};
+use vikey_core::{Action, Engine};
 use vikey_vietnamese::VietnamesePlugin;
 
 fn create_engine() -> Engine {
@@ -13,14 +13,17 @@ fn create_engine() -> Engine {
 
 fn process_string(engine: &mut Engine, input: &str) -> String {
     let mut output = String::new();
-    
+
     for c in input.chars() {
         let action = engine.process(c);
         match action {
             Action::Commit(text) => {
                 output.push_str(&text);
             }
-            Action::Replace { backspace_count, text } => {
+            Action::Replace {
+                backspace_count,
+                text,
+            } => {
                 // Remove last N characters
                 for _ in 0..backspace_count {
                     output.pop();
@@ -30,7 +33,7 @@ fn process_string(engine: &mut Engine, input: &str) -> String {
             Action::DoNothing => {}
         }
     }
-    
+
     output
 }
 
@@ -101,7 +104,7 @@ fn test_word_with_dd() {
 #[test]
 fn test_all_vowels() {
     let mut engine = create_engine();
-    
+
     let tests = vec![
         ("aa", "â"),
         ("ee", "ê"),
@@ -110,11 +113,14 @@ fn test_all_vowels() {
         ("ow", "ơ"),
         ("uw", "ư"),
     ];
-    
+
     for (input, expected) in tests {
         engine.reset();
         let result = process_string(&mut engine, input);
-        println!("Input: '{}' -> Output: '{}' (expected: '{}')", input, result, expected);
+        println!(
+            "Input: '{}' -> Output: '{}' (expected: '{}')",
+            input, result, expected
+        );
         assert_eq!(result, expected, "Failed for input: {}", input);
     }
 }
@@ -122,19 +128,22 @@ fn test_all_vowels() {
 #[test]
 fn test_all_tones() {
     let mut engine = create_engine();
-    
+
     let tests = vec![
-        ("as", "á"),  // sắc
-        ("af", "à"),  // huyền
-        ("ar", "ả"),  // hỏi
-        ("ax", "ã"),  // ngã
-        ("aj", "ạ"),  // nặng
+        ("as", "á"), // sắc
+        ("af", "à"), // huyền
+        ("ar", "ả"), // hỏi
+        ("ax", "ã"), // ngã
+        ("aj", "ạ"), // nặng
     ];
-    
+
     for (input, expected) in tests {
         engine.reset();
         let result = process_string(&mut engine, input);
-        println!("Input: '{}' -> Output: '{}' (expected: '{}')", input, result, expected);
+        println!(
+            "Input: '{}' -> Output: '{}' (expected: '{}')",
+            input, result, expected
+        );
         assert_eq!(result, expected, "Failed for input: {}", input);
     }
 }

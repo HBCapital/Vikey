@@ -1,0 +1,30 @@
+[package]
+name = "vikey"
+version = "0.1.0"
+edition = "2021"
+description = "Vikey Tray Application"
+
+[[bin]]
+name = "vikey"
+path = "src/main.rs"
+
+[dependencies]
+tray-icon = "0.21"
+muda = "0.17"
+winit = "0.30.5"
+vikey-core = { path = "../vikey-core" }
+vikey-vietnamese = { path = "../vikey-vietnamese" }
+log = "0.4"
+env_logger = "0.11"
+anyhow = "1.0"
+image = "0.24"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.8"
+dirs = "5.0"
+single-instance = "0.3"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "0.52", features = ["Win32_UI_WindowsAndMessaging"] }
+
+[build-dependencies]
+embed-resource = "2.4"

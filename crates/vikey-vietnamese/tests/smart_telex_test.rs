@@ -7,9 +7,12 @@ use vikey_vietnamese::Tone;
 fn test_smart_tone_placement_oa() {
     // hoa + s -> hoá (New Style)
     assert_eq!(place_tone("oa", Tone::Acute, ToneStyle::New), "oá");
-    
+
     // hoa + s -> hóa (Old Style)
-    assert_eq!(place_tone("oa", Tone::Acute, ToneStyle::Old), "hóa".chars().skip(1).collect::<String>());
+    assert_eq!(
+        place_tone("oa", Tone::Acute, ToneStyle::Old),
+        "hóa".chars().skip(1).collect::<String>()
+    );
 }
 
 #[test]
@@ -22,7 +25,7 @@ fn test_smart_tone_placement_oe() {
 fn test_smart_tone_placement_uy() {
     // thuy + s -> thuý (New Style)
     assert_eq!(place_tone("uy", Tone::Acute, ToneStyle::New), "uý");
-    
+
     // thuy + s -> thúy (Old Style)
     assert_eq!(place_tone("uy", Tone::Acute, ToneStyle::Old), "úy");
 }

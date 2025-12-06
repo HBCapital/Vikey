@@ -23,22 +23,21 @@ pub fn place_tone(vowel: &str, tone: Tone, style: ToneStyle) -> String {
     if chars.is_empty() {
         return vowel.to_string();
     }
-    
+
     // If only 1 character, apply tone to it
     if chars.len() == 1 {
         return apply_tone_to_char(chars[0], tone).to_string();
     }
-    
+
     // If 2 characters
     if chars.len() == 2 {
         let v1 = chars[0].to_lowercase().next().unwrap();
         let v2 = chars[1].to_lowercase().next().unwrap();
-        
+
         // Special cases for "oa", "oe", "uy"
         // New Style: place on 2nd char (hoà, hoè, thuý)
         // Old Style: place on 1st char (hòa, hòe, thúy)
-        if (v1 == 'o' && (v2 == 'a' || v2 == 'e' || v2 == 'ă')) || 
-           (v1 == 'u' && v2 == 'y') {
+        if (v1 == 'o' && (v2 == 'a' || v2 == 'e' || v2 == 'ă')) || (v1 == 'u' && v2 == 'y') {
             match style {
                 ToneStyle::New => {
                     // Place on 2nd char
@@ -56,28 +55,28 @@ pub fn place_tone(vowel: &str, tone: Tone, style: ToneStyle) -> String {
                 }
             }
         }
-        
+
         // Default rule for 2 chars: place on 1st char (e.g., "ai" -> "ái", "eu" -> "ếu")
-        // UNLESS it's "uo" (uơ) or "ie" (iê) - but those are usually represented as single modified vowels in some contexts, 
+        // UNLESS it's "uo" (uơ) or "ie" (iê) - but those are usually represented as single modified vowels in some contexts,
         // but here we deal with raw chars.
         // Actually, "ia", "ua", "ưa" -> tone on 1st char (ía, úa, ứa)
         // "iê", "uô", "ươ" -> tone on 2nd char (iế, uố, ướ)
-        
+
         // Let's check if the second char is a modified vowel that usually takes tone
         if v2 == 'ê' || v2 == 'ô' || v2 == 'ơ' {
-             let mut res = String::new();
-             res.push(chars[0]);
-             res.push(apply_tone_to_char(chars[1], tone));
-             return res;
+            let mut res = String::new();
+            res.push(chars[0]);
+            res.push(apply_tone_to_char(chars[1], tone));
+            return res;
         }
-        
+
         // Default: 1st char
         let mut res = String::new();
         res.push(apply_tone_to_char(chars[0], tone));
         res.push(chars[1]);
         return res;
     }
-    
+
     // If 3 characters (e.g., "yeu", "uoi")
     if chars.len() == 3 {
         // Usually place on 2nd char (yếu, uối)
@@ -87,7 +86,7 @@ pub fn place_tone(vowel: &str, tone: Tone, style: ToneStyle) -> String {
         res.push(chars[2]);
         return res;
     }
-    
+
     // Fallback: place on 1st char
     let mut res = String::new();
     res.push(apply_tone_to_char(chars[0], tone));

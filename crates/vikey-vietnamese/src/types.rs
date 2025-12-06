@@ -4,21 +4,21 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ToneType {
     None = 0,
-    Acute = 1,   // Sắc (á)
-    Grave = 2,   // Huyền (à)
-    Hook = 3,    // Hỏi (ả)
-    Tilde = 4,   // Ngã (ã)
-    Dot = 5,     // Nặng (ạ)
+    Acute = 1, // Sắc (á)
+    Grave = 2, // Huyền (à)
+    Hook = 3,  // Hỏi (ả)
+    Tilde = 4, // Ngã (ã)
+    Dot = 5,   // Nặng (ạ)
 }
 
 /// Vietnamese mark types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MarkType {
     None = 0,
-    Horn = 1,      // Ơ, ư
-    Breve = 2,     // Ă
+    Horn = 1,       // Ơ, ư
+    Breve = 2,      // Ă
     Circumflex = 3, // Â, ê, ô
-    DStroke = 4,   // Đ
+    DStroke = 4,    // Đ
 }
 
 /// Word form classification (from fcitx5-unikey)
@@ -56,16 +56,16 @@ pub enum TransformEffect {
 pub struct Transformation {
     /// The key that triggered this transformation
     pub key: char,
-    
+
     /// Effect type
     pub effect: TransformEffect,
-    
+
     /// Tone type (if effect is Tone)
     pub tone: ToneType,
-    
+
     /// Mark type (if effect is Mark)
     pub mark: MarkType,
-    
+
     /// Target position in buffer (for Tone/Mark effects)
     pub target_pos: Option<usize>,
 }
@@ -80,7 +80,7 @@ impl Transformation {
             target_pos: None,
         }
     }
-    
+
     pub fn new_tone(key: char, tone: ToneType, target_pos: usize) -> Self {
         Self {
             key,
@@ -90,7 +90,7 @@ impl Transformation {
             target_pos: Some(target_pos),
         }
     }
-    
+
     pub fn new_mark(key: char, mark: MarkType, target_pos: usize) -> Self {
         Self {
             key,

@@ -1,6 +1,6 @@
 // Integration tests for TelexMethodV2
 
-use vikey_core::{Engine, Action};
+use vikey_core::{Action, Engine};
 use vikey_vietnamese::VietnamesePlugin;
 
 fn create_engine_v2() -> Engine {
@@ -13,14 +13,17 @@ fn create_engine_v2() -> Engine {
 
 fn process_string(engine: &mut Engine, input: &str) -> String {
     let mut output = String::new();
-    
+
     for c in input.chars() {
         let action = engine.process(c);
         match action {
             Action::Commit(text) => {
                 output.push_str(&text);
             }
-            Action::Replace { backspace_count, text } => {
+            Action::Replace {
+                backspace_count,
+                text,
+            } => {
                 // Remove last N characters
                 for _ in 0..backspace_count {
                     output.pop();
@@ -30,7 +33,7 @@ fn process_string(engine: &mut Engine, input: &str) -> String {
             Action::DoNothing => {}
         }
     }
-    
+
     output
 }
 
@@ -109,19 +112,22 @@ fn test_v2_complex_with_tone() {
 #[test]
 fn test_v2_all_tones() {
     let mut engine = create_engine_v2();
-    
+
     let tests = vec![
-        ("as", "á"),  // sắc
-        ("af", "à"),  // huyền
-        ("ar", "ả"),  // hỏi
-        ("ax", "ã"),  // ngã
-        ("aj", "ạ"),  // nặng
+        ("as", "á"), // sắc
+        ("af", "à"), // huyền
+        ("ar", "ả"), // hỏi
+        ("ax", "ã"), // ngã
+        ("aj", "ạ"), // nặng
     ];
-    
+
     for (input, expected) in tests {
         engine.reset();
         let result = process_string(&mut engine, input);
-        println!("Input: '{}' -> Output: '{}' (expected: '{}')", input, result, expected);
+        println!(
+            "Input: '{}' -> Output: '{}' (expected: '{}')",
+            input, result, expected
+        );
         assert_eq!(result, expected, "Failed for input: {}", input);
     }
 }
@@ -129,25 +135,25 @@ fn test_v2_all_tones() {
 #[test]
 fn test_v2_word_building() {
     let mut engine = create_engine_v2();
-    
+
     // Build word character by character
     assert_eq!(process_string(&mut engine, "t"), "t");
     engine.reset();
-    
+
     assert_eq!(process_string(&mut engine, "tu"), "tu");
     engine.reset();
-    
+
     assert_eq!(process_string(&mut engine, "tuo"), "tuo");
     engine.reset();
-    
-    assert_eq!(process_string(&mut engine, "tuow"), "tuơ");  // ow→ơ
+
+    assert_eq!(process_string(&mut engine, "tuow"), "tuơ"); // ow→ơ
     engine.reset();
-    
+
     assert_eq!(process_string(&mut engine, "tuown"), "tuơn");
     engine.reset();
-    
+
     assert_eq!(process_string(&mut engine, "tuowng"), "tương");
     engine.reset();
-    
+
     assert_eq!(process_string(&mut engine, "tuowngs"), "tướng"); // tone
 }

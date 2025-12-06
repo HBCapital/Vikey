@@ -1,11 +1,11 @@
 // plugin.rs - Vietnamese Language Plugin
 
-use vikey_core::traits::{LanguagePlugin, InputMethodTrait, LookupProvider, LanguageRules};
 use crate::lookup::VietnameseLookup;
 use crate::methods::telex::TelexMethod;
 use crate::methods::telex_v2::TelexMethodV2;
-use crate::methods::vni::VNIMethod;
 use crate::methods::viqr::VIQRMethod;
+use crate::methods::vni::VNIMethod;
+use vikey_core::traits::{InputMethodTrait, LanguagePlugin, LanguageRules, LookupProvider};
 
 /// Vietnamese Language Plugin
 pub struct VietnamesePlugin {
@@ -33,15 +33,15 @@ impl LanguagePlugin for VietnamesePlugin {
     fn name(&self) -> &str {
         "Tiếng Việt"
     }
-    
+
     fn id(&self) -> &str {
         "vietnamese"
     }
-    
+
     fn input_methods(&self) -> Vec<&str> {
         vec!["telex", "telex_v2", "vni", "viqr"]
     }
-    
+
     fn create_input_method(&self, id: &str) -> Option<Box<dyn InputMethodTrait>> {
         match id {
             "telex" => Some(Box::new(TelexMethod::new())),
@@ -51,11 +51,11 @@ impl LanguagePlugin for VietnamesePlugin {
             _ => None,
         }
     }
-    
+
     fn lookup(&self) -> &dyn LookupProvider {
         &self.lookup_telex
     }
-    
+
     fn rules(&self) -> &dyn LanguageRules {
         // TODO: Implement VietnameseRules
         unimplemented!("VietnameseRules not yet implemented")
@@ -65,14 +65,14 @@ impl LanguagePlugin for VietnamesePlugin {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_plugin_info() {
         let plugin = VietnamesePlugin::new();
         assert_eq!(plugin.id(), "vietnamese");
         assert_eq!(plugin.name(), "Tiếng Việt");
     }
-    
+
     #[test]
     fn test_input_methods() {
         let plugin = VietnamesePlugin::new();
@@ -81,7 +81,7 @@ mod tests {
         assert!(methods.contains(&"vni"));
         assert!(methods.contains(&"viqr"));
     }
-    
+
     #[test]
     fn test_create_telex() {
         let plugin = VietnamesePlugin::new();

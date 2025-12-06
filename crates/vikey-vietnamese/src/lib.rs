@@ -1,15 +1,15 @@
 // lib.rs - Vietnamese Language Support for Vikey
 
-pub mod types;
 pub mod lookup;
-pub mod plugin;
 pub mod methods;
-pub mod syllable;
+pub mod plugin;
 pub mod rules;
+pub mod syllable;
+pub mod types;
 pub mod validation;
 
 // Re-exports
-pub use plugin::VietnamesePlugin;
 pub use lookup::VietnameseLookup;
-pub use types::{ToneType, MarkType, WordForm, TransformEffect, Transformation};
-pub use syllable::{Syllable, Tone, Modification};
+pub use plugin::VietnamesePlugin;
+pub use syllable::{Modification, Syllable, Tone};
+pub use types::{MarkType, ToneType, TransformEffect, Transformation, WordForm};

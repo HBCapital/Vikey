@@ -7,19 +7,19 @@
 pub struct NomCandidate {
     /// Ký tự Nôm (Unicode)
     pub character: char,
-    
+
     /// Phiên âm Quốc ngữ
     pub quoc_ngu: String,
-    
+
     /// Phiên âm Pinyin (nếu có)
     pub pinyin: Option<String>,
-    
+
     /// Nghĩa tiếng Việt hiện đại
     pub meaning: Option<String>,
-    
+
     /// Tần suất sử dụng (0-100)
     pub frequency: u8,
-    
+
     /// Phân loại (tự tạo, mượn Hán, ...)
     pub category: NomCategory,
 }
@@ -29,10 +29,10 @@ pub struct NomCandidate {
 pub enum NomCategory {
     /// Chữ Nôm tự tạo (phần lớn)
     Native,
-    
+
     /// Mượn từ chữ Hán
     SinoVietnamese,
-    
+
     /// Chữ Hán dùng nguyên
     PureHan,
 }
@@ -42,10 +42,10 @@ pub enum NomCategory {
 pub struct NomCharInfo {
     /// Ký tự có phải Nôm valid không
     pub is_nom: bool,
-    
+
     /// Unicode code point
     pub code_point: u32,
-    
+
     /// Block trong Unicode (Extension B, C, D, ...)
     pub unicode_block: UnicodeBlock,
 }
@@ -56,19 +56,19 @@ pub enum UnicodeBlock {
     /// CJK Unified Ideographs (U+4E00–U+9FFF)
     #[default]
     CjkUnified,
-    
+
     /// Extension A (U+3400–U+4DBF)
     ExtensionA,
-    
+
     /// Extension B (U+20000–U+2A6DF) - Chứa nhiều Nôm
     ExtensionB,
-    
+
     /// Extension C (U+2A700–U+2B73F)
     ExtensionC,
-    
+
     /// Extension D (U+2B740–U+2B81F)
     ExtensionD,
-    
+
     /// Other
     Other,
 }
@@ -90,13 +90,19 @@ impl UnicodeBlock {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_unicode_block() {
         // 𡨸 = U+21A38 (Extension B)
-        assert_eq!(UnicodeBlock::from_code_point(0x21A38), UnicodeBlock::ExtensionB);
-        
+        assert_eq!(
+            UnicodeBlock::from_code_point(0x21A38),
+            UnicodeBlock::ExtensionB
+        );
+
         // 喃 = U+5583 (CJK Unified)
-        assert_eq!(UnicodeBlock::from_code_point(0x5583), UnicodeBlock::CjkUnified);
+        assert_eq!(
+            UnicodeBlock::from_code_point(0x5583),
+            UnicodeBlock::CjkUnified
+        );
     }
 }

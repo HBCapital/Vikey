@@ -24,10 +24,10 @@ pub enum WordForm {
 pub enum Action {
     /// Do nothing
     DoNothing,
-    
+
     /// Commit text as-is
     Commit(String),
-    
+
     /// Replace previous text
     Replace {
         /// Number of characters to delete (backspace)
@@ -42,40 +42,40 @@ pub enum Action {
 pub struct CharInfo {
     /// Vowel index (0 = not a vowel, 1-6 for a,e,i,o,u,y)
     pub vowel_index: u8,
-    
+
     /// Macro index (for special transformations)
     pub macro_index: u8,
-    
+
     /// Double character index
     pub double_char_index: u8,
-    
+
     /// Tone index
     pub tone_index: u8,
-    
+
     /// Current tone
     pub current_tone: u8,
-    
+
     /// Is breve mark
     pub is_breve: bool,
-    
+
     /// Is separator (space, newline, etc.)
     pub is_separator: bool,
-    
+
     /// Is soft separator (punctuation)
     pub is_soft_separator: bool,
-    
+
     /// VNI double index
     pub vni_double_index: u8,
-    
+
     /// Word form
     pub word_form: WordForm,
-    
+
     /// Consonant 1 offset
     pub c1_offset: Option<usize>,
-    
+
     /// Vowel offset
     pub v_offset: Option<usize>,
-    
+
     /// Consonant 2 offset
     pub c2_offset: Option<usize>,
 }
@@ -105,7 +105,7 @@ impl Default for CharInfo {
 pub struct Config {
     /// Enable/disable the IME
     pub enabled: bool,
-    
+
     /// Auto-commit on separator
     pub auto_commit: bool,
 }
@@ -128,7 +128,7 @@ mod tests {
         let action = Action::Commit("test".to_string());
         assert!(matches!(action, Action::Commit(_)));
     }
-    
+
     #[test]
     fn test_config_default() {
         let config = Config::default();

@@ -1,0 +1,34 @@
+﻿cargo :    Compiling vikey-vietnamese v0.4.0 
+(C:\Users\Admin\Download\Vikey\crates\vikey-vietnamese)
+At line:1 char:1
++ cargo test test_telex_v2_uwo_shortcut -- --nocapture > test_output.tx ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (   Compiling vi...key-vietnamese 
+   ):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+error: this file contains an unclosed delimiter
+   --> crates\vikey-vietnamese\src\methods\telex_v2.rs:345:3
+    |
+ 33 | impl TelexMethodV2 {
+    |                    - unclosed delimiter
+...
+ 48 |     fn parse_telex(chars: &[char]) -> Syllable {
+    |                                                - unclosed delimiter
+...
+ 51 |         for &key in chars {
+    |                           - unclosed delimiter
+...
+ 73 |             match lower_key {
+    |                             - this delimiter might not be properly 
+closed...
+...
+163 | }
+    | - ...as it matches this but it has different indentation
+...
+345 | }
+    |  ^
+
+error: could not compile `vikey-vietnamese` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `vikey-vietnamese` (lib test) due to 1 previous error

@@ -1,0 +1,30 @@
+[package]
+name = "vikey-windows-tsf"
+version = "0.1.0"
+edition = "2021"
+description = "Vikey Windows TSF Text Service"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+windows = { version = "0.52", features = [
+    "Win32_UI_TextServices",
+    "Win32_System_Com",
+    "Win32_Foundation",
+    "Win32_System_Registry",
+    "Win32_System_LibraryLoader",
+    "Win32_System_SystemServices",
+    "Win32_UI_WindowsAndMessaging",
+    "implement"
+] }
+windows-core = "0.52"
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+bincode = "1.3"
+tracing = "0.1"
+chrono = "0.4"
+winreg = "0.52"
+
+[build-dependencies]
+embed-resource = "3.0"

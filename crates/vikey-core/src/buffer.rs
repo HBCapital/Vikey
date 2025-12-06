@@ -11,13 +11,13 @@ const KEYS_MAINTAIN: usize = 20;
 pub struct InputBuffer {
     /// Characters in the buffer
     chars: Vec<char>,
-    
+
     /// Lowercase flags for each character
     lowercase_flags: Vec<bool>,
-    
+
     /// Last 'w' was converted to 'ư' (Telex specific)
     last_w_converted: bool,
-    
+
     /// Last character was an escape character (VIQR specific)
     last_is_escape: bool,
 }
@@ -145,7 +145,7 @@ mod tests {
         let mut buffer = InputBuffer::new();
         buffer.push('a', true);
         buffer.push('B', false);
-        
+
         assert_eq!(buffer.len(), 2);
         assert_eq!(buffer.pop(), Some(('B', false)));
         assert_eq!(buffer.pop(), Some(('a', true)));
@@ -156,10 +156,10 @@ mod tests {
     fn test_last() {
         let mut buffer = InputBuffer::new();
         assert_eq!(buffer.last(), None);
-        
+
         buffer.push('a', true);
         assert_eq!(buffer.last(), Some(&'a'));
-        
+
         buffer.push('b', true);
         assert_eq!(buffer.last(), Some(&'b'));
     }
@@ -169,11 +169,11 @@ mod tests {
         let mut buffer = InputBuffer::new();
         buffer.push('a', true);
         buffer.push('b', true);
-        
+
         assert_eq!(buffer.get(0), Some(&'a'));
         assert_eq!(buffer.get(1), Some(&'b'));
         assert_eq!(buffer.get(2), None);
-        
+
         buffer.set(0, 'â');
         assert_eq!(buffer.get(0), Some(&'â'));
     }
@@ -184,9 +184,9 @@ mod tests {
         buffer.push('a', true);
         buffer.push('b', true);
         buffer.set_last_w_converted(true);
-        
+
         buffer.clear();
-        
+
         assert_eq!(buffer.len(), 0);
         assert!(!buffer.last_w_converted());
     }
@@ -199,19 +199,19 @@ mod tests {
         buffer.push('l', true);
         buffer.push('l', true);
         buffer.push('o', true);
-        
+
         assert_eq!(buffer.to_string(), "hello");
     }
 
     #[test]
     fn test_throw_buffer() {
         let mut buffer = InputBuffer::new();
-        
+
         // Fill buffer beyond capacity (40)
         for i in 0..50 {
             buffer.push(char::from_digit(i % 10, 10).unwrap(), true);
         }
-        
+
         // After pushing 50 chars:
         // - First 40 chars fill buffer
         // - 41st char triggers throw_buffer, keeps last 20, then adds 41st = 21
@@ -227,7 +227,7 @@ mod tests {
         buffer.push('a', true);
         buffer.push('b', true);
         buffer.push('c', true);
-        
+
         let chars: String = buffer.chars_from(1).collect();
         assert_eq!(chars, "bc");
     }
